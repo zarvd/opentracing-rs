@@ -1,0 +1,9 @@
+[package]
+name = "opentracing-rs"
+description = "opentracing for rust"
+version = "0.1.0"
+license = "MIT"
+authors = ["ccc13 <currantxx@gmail.com>"]
+edition = "2018"
+
+[dependencies]
