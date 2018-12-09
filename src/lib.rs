@@ -1,7 +1,2 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use opentracing::{Span, SpanContext, Tag, Tracer};
+pub use opentracing_jaeger as jaeger;
