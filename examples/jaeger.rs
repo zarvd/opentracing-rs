@@ -11,6 +11,6 @@ fn main() {
 
     let mut tracer = JaegerTracer::new("jaeger-example", sampler, reporter);
     {
-        let span = tracer.start_span("hello");
+        let span = tracer.span("hello");
     }
 }
