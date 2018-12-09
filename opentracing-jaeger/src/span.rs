@@ -6,7 +6,10 @@ pub struct TraceId {
 
 impl TraceId {
     pub fn new() -> Self {
-        Self { low: 0, high: 0 }
+        Self {
+            low: rand::random(),
+            high: rand::random(),
+        }
     }
 }
 
@@ -22,7 +25,7 @@ impl SpanState {
     pub fn new() -> Self {
         Self {
             trace_id: TraceId::new(),
-            span_id: 0,
+            span_id: rand::random(),
         }
     }
 }
