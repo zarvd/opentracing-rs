@@ -1,15 +1,13 @@
-use std::borrow::Cow;
-
 #[derive(Clone, Debug)]
 pub struct Tag {
-    name: Cow<'static, str>,
+    name: String,
     value: TagValue,
 }
 
 impl Tag {
     pub fn new<N, V>(name: N, value: V) -> Self
     where
-        N: Into<Cow<'static, str>>,
+        N: Into<String>,
         V: Into<TagValue>,
     {
         Self {
@@ -21,20 +19,20 @@ impl Tag {
 
 #[derive(Clone, Debug)]
 pub enum TagValue {
-    String(Cow<'static, str>),
+    String(String),
     Bool(bool),
     Number(f64),
 }
 
 impl From<&'static str> for TagValue {
     fn from(f: &'static str) -> Self {
-        TagValue::String(Cow::Borrowed(f))
+        TagValue::String(f.to_owned())
     }
 }
 
 impl From<String> for TagValue {
     fn from(f: String) -> Self {
-        TagValue::String(Cow::Owned(f))
+        TagValue::String(f)
     }
 }
 

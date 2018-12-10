@@ -1,7 +1,7 @@
-use std::borrow::Cow;
 use std::time::SystemTime;
 
 use futures::sync::mpsc;
+use futures::{Future, Sink};
 
 use crate::Tag;
 
@@ -12,11 +12,17 @@ enum SpanReference<S> {
 }
 
 #[derive(Debug)]
-pub struct Span<S> {
-    inner: Inner<S>,
+pub struct Span<S>
+where
+    S: 'static + Sync + Send,
+{
+    inner: Option<Inner<S>>,
 }
 
-impl<S> Span<S> {
+impl<S> Span<S>
+where
+    S: 'static + Send + Sync,
+{
     fn new<O>(
         sender: mpsc::UnboundedSender<Span<S>>,
         operation_name: O,
@@ -27,49 +33,87 @@ impl<S> Span<S> {
         baggage_items: Vec<BaggageItem>,
     ) -> Self
     where
-        O: Into<Cow<'static, str>>,
+        O: Into<String>,
     {
         let context = SpanContext::new(state, baggage_items);
         let operation_name = operation_name.into();
-        let inner = Inner {
+        let finish_time = None;
+        let inner = Some(Inner {
             sender,
             operation_name,
             start_time,
+            finish_time,
             tags,
             references,
             context,
-        };
+        });
 
         Self { inner }
     }
 
-    fn context(&self) -> &SpanContext<S> {
-        &self.inner.context
+    pub fn context(&self) -> &SpanContext<S> {
+        &self.inner.as_ref().unwrap().context
     }
 
-    fn set_operation_name<O>(&mut self, op_name: O)
+    pub fn set_operation_name<O>(&mut self, op_name: O)
     where
-        O: Into<Cow<'static, str>>,
+        O: Into<String>,
     {
-        self.inner.operation_name = op_name.into();
+        if let Some(inner) = self.inner.as_mut() {
+            inner.operation_name = op_name.into();
+        }
     }
 
-    fn operation_name(&self) -> &str {
-        self.inner.operation_name.as_ref()
+    pub fn operation_name(&self) -> &str {
+        self.inner.as_ref().unwrap().operation_name.as_ref()
     }
 
-    fn set_tag(&mut self, tag: Tag) {
-        self.inner.tags.push(tag);
+    pub fn set_tag(&mut self, tag: Tag) {
+        if let Some(inner) = self.inner.as_mut() {
+            inner.tags.push(tag);
+        }
     }
 
-    fn finish(self) {}
+    pub fn is_finished(&self) -> bool {
+        self.inner.as_ref().unwrap().finish_time.is_some()
+    }
+
+    pub fn finish(&mut self) {
+        if self.inner.is_none() || self.is_finished() {
+            return;
+        }
+        let inner = self.inner.as_mut().unwrap();
+        inner.finish_time = Some(SystemTime::now());
+        let sender = inner.sender.clone();
+        tokio::spawn(
+            sender
+                .send(Span {
+                    inner: self.inner.take(),
+                })
+                .map(|_| ())
+                .map_err(|_| ()),
+        );
+    }
+}
+
+impl<S> Drop for Span<S>
+where
+    S: 'static + Send + Sync,
+{
+    fn drop(&mut self) {
+        self.finish()
+    }
 }
 
 #[derive(Debug)]
-struct Inner<S> {
+struct Inner<S>
+where
+    S: 'static + Send + Sync,
+{
     sender: mpsc::UnboundedSender<Span<S>>,
-    operation_name: Cow<'static, str>,
+    operation_name: String,
     start_time: SystemTime,
+    finish_time: Option<SystemTime>,
     tags: Vec<Tag>,
     references: Vec<SpanReference<S>>,
     context: SpanContext<S>,
@@ -105,9 +149,12 @@ impl BaggageItem {
     }
 }
 
-pub struct SpanBuilder<S> {
+pub struct SpanBuilder<S>
+where
+    S: 'static + Send + Sync,
+{
     sender: mpsc::UnboundedSender<Span<S>>,
-    operation_name: Cow<'static, str>,
+    operation_name: String,
     start_time: Option<SystemTime>,
     tags: Vec<Tag>,
     state: S,
@@ -115,10 +162,13 @@ pub struct SpanBuilder<S> {
     baggage_items: Vec<BaggageItem>,
 }
 
-impl<S> SpanBuilder<S> {
+impl<S> SpanBuilder<S>
+where
+    S: 'static + Send + Sync,
+{
     pub fn new<O>(operation_name: O, state: S, sender: mpsc::UnboundedSender<Span<S>>) -> Self
     where
-        O: Into<Cow<'static, str>>,
+        O: Into<String>,
     {
         let operation_name = operation_name.into();
         let baggage_items = Vec::new();
@@ -150,7 +200,7 @@ impl<S> SpanBuilder<S> {
         S: Clone,
     {
         self.baggage_items
-            .extend(span.inner.context.baggage_items.clone());
+            .extend(span.inner.as_ref().unwrap().context.baggage_items.clone());
         self.references
             .push(SpanReference::ChildOf(span.context().state.clone()));
         self

@@ -12,7 +12,7 @@ where
 {
     service_name: Cow<'static, str>,
     sampler: S,
-    reporter: R,
+    reporter: Option<R>,
     sender: mpsc::UnboundedSender<Span>,
     receiver: Option<mpsc::UnboundedReceiver<Span>>,
 }
@@ -31,17 +31,22 @@ where
         Self {
             service_name: service_name.into(),
             sampler,
-            reporter,
             sender,
+            reporter: Some(reporter),
             receiver: Some(receiver),
         }
     }
 
     pub fn serve(&mut self) -> (impl Future<Item = (), Error = ()>) {
+        let mut reporter = self.reporter.take().unwrap();
+
         self.receiver
             .take()
             .unwrap()
-            .for_each(|_| Ok(()))
+            .for_each(move |span| {
+                reporter.report(&span);
+                Ok(())
+            })
             .map_err(|_| ())
     }
 }
@@ -53,7 +58,7 @@ where
 {
     fn span<N>(&mut self, operation_name: N) -> SpanBuilder<SpanState>
     where
-        N: Into<Cow<'static, str>>,
+        N: Into<String>,
     {
         let state = SpanState::new();
 

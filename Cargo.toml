@@ -15,3 +15,7 @@ members = [
 [dependencies]
 opentracing = { path = "opentracing" }
 opentracing-jaeger = { path = "opentracing-jaeger" }
+
+[dev-dependencies]
+futures = "0.1.25"
+tokio = "0.1.13"

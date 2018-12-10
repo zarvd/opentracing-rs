@@ -1,4 +1,8 @@
+extern crate futures;
 extern crate opentracing_rs;
+extern crate tokio;
+
+use futures::lazy;
 
 use opentracing_rs::{
     jaeger::{ConstSampler, LoggingReporter, Tracer as JaegerTracer},
@@ -10,7 +14,15 @@ fn main() {
     let reporter = LoggingReporter::new();
 
     let mut tracer = JaegerTracer::new("jaeger-example", sampler, reporter);
-    {
-        let span = tracer.start_span("hello");
-    }
+
+    tokio::run(lazy(move || {
+        tokio::spawn(tracer.serve());
+        {
+            let span = tracer.span("hello").start();
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+
+        Ok(())
+    }));
 }
