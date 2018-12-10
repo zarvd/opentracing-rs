@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 futures = "0.1.25"
+rand = "0.6"
 
 opentracing = { path = "../opentracing" }
