@@ -6,7 +6,7 @@ use futures::lazy;
 
 use opentracing_rs::{
     jaeger::{ConstSampler, LoggingReporter, Tracer as JaegerTracer},
-    Tracer,
+    SpanBuilder, Tracer,
 };
 
 fn main() {
@@ -21,6 +21,12 @@ fn main() {
             let span = tracer.span("hello").start();
 
             std::thread::sleep(std::time::Duration::from_secs(1));
+
+            let child_span = tracer.span("testing").child_of(&span);
+            {
+                let _ = child_span.start();
+                std::thread::sleep(std::time::Duration::from_secs(2));
+            }
         }
 
         Ok(())

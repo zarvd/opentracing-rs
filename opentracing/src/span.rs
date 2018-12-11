@@ -6,7 +6,7 @@ use futures::{Future, Sink};
 use crate::Tag;
 
 #[derive(Debug)]
-enum SpanReference<S> {
+pub enum SpanReference<S> {
     ChildOf(S),
     FollowsFrom(S),
 }
@@ -23,7 +23,7 @@ impl<S> Span<S>
 where
     S: 'static + Send + Sync,
 {
-    fn new<O>(
+    pub fn new<O>(
         sender: mpsc::UnboundedSender<Span<S>>,
         operation_name: O,
         start_time: SystemTime,
@@ -132,6 +132,14 @@ impl<S> SpanContext<S> {
             baggage_items,
         }
     }
+
+    pub fn state(&self) -> &S {
+        &self.state
+    }
+
+    pub fn baggage_items(&self) -> &Vec<BaggageItem> {
+        &self.baggage_items
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -149,72 +157,12 @@ impl BaggageItem {
     }
 }
 
-pub struct SpanBuilder<S>
+pub trait SpanBuilder<S>
 where
-    S: 'static + Send + Sync,
+    S: Send + Sync,
 {
-    sender: mpsc::UnboundedSender<Span<S>>,
-    operation_name: String,
-    start_time: Option<SystemTime>,
-    tags: Vec<Tag>,
-    state: S,
-    references: Vec<SpanReference<S>>,
-    baggage_items: Vec<BaggageItem>,
-}
-
-impl<S> SpanBuilder<S>
-where
-    S: 'static + Send + Sync,
-{
-    pub fn new<O>(operation_name: O, state: S, sender: mpsc::UnboundedSender<Span<S>>) -> Self
-    where
-        O: Into<String>,
-    {
-        let operation_name = operation_name.into();
-        let baggage_items = Vec::new();
-        let tags = Vec::new();
-        let references = Vec::new();
-        Self {
-            sender,
-            operation_name,
-            baggage_items,
-            tags,
-            state,
-            references,
-            start_time: None,
-        }
-    }
-
-    pub fn start_time(mut self, time: SystemTime) -> Self {
-        self.start_time = Some(time);
-        self
-    }
-
-    pub fn tag(mut self, tag: Tag) -> Self {
-        self.tags.push(tag);
-        self
-    }
-
-    pub fn child_of(mut self, span: &Span<S>) -> Self
-    where
-        S: Clone,
-    {
-        self.baggage_items
-            .extend(span.inner.as_ref().unwrap().context.baggage_items.clone());
-        self.references
-            .push(SpanReference::ChildOf(span.context().state.clone()));
-        self
-    }
-
-    pub fn start(self) -> Span<S> {
-        Span::new(
-            self.sender,
-            self.operation_name,
-            self.start_time.unwrap_or_else(SystemTime::now),
-            self.tags,
-            self.references,
-            self.state,
-            self.baggage_items,
-        )
-    }
+    fn start(self) -> Span<S>;
+    fn child_of(self, parent: &Span<S>) -> Self;
+    fn start_time(self, time: SystemTime) -> Self;
+    fn tag(self, tag: Tag) -> Self;
 }

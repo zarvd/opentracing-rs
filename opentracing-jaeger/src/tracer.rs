@@ -1,9 +1,8 @@
 use std::borrow::Cow;
 
 use futures::{sync::mpsc, Future, Stream};
-use opentracing::SpanBuilder;
 
-use crate::{Reporter, Sampler, Span, SpanState};
+use crate::{Reporter, Sampler, Span, SpanBuilder, SpanState};
 
 pub struct Tracer<S, R>
 where
@@ -51,17 +50,15 @@ where
     }
 }
 
-impl<S, R> opentracing::Tracer<SpanState> for Tracer<S, R>
+impl<S, R> opentracing::Tracer<SpanState, SpanBuilder> for Tracer<S, R>
 where
     S: Sampler,
     R: Reporter,
 {
-    fn span<N>(&mut self, operation_name: N) -> SpanBuilder<SpanState>
+    fn span<N>(&mut self, operation_name: N) -> SpanBuilder
     where
         N: Into<String>,
     {
-        let state = SpanState::new();
-
-        SpanBuilder::new(operation_name, state, self.sender.clone())
+        SpanBuilder::new(operation_name, self.sender.clone())
     }
 }
