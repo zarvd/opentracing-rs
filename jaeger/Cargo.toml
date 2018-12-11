@@ -10,4 +10,4 @@ edition = "2018"
 futures = "0.1.25"
 rand = "0.6"
 
-opentracing-rs-core = { path = "../core" }
+opentracing-rs-core = { path = "../core", version = "0.1.0" }
