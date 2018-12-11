@@ -12,18 +12,18 @@ travis-ci = { repository = "ccc13/opentracing-rs" }
 
 [workspace]
 members = [
-  "opentracing",
-  "opentracing-jaeger"
+  "core",
+  "jaeger"
 ]
 
 [dependencies]
-opentracing = { path = "opentracing", version = "0.1.0" }
-opentracing-jaeger = { path = "opentracing-jaeger", version = "0.1.0" }
+opentracing-rs-core = { path = "core", version = "0.1.0" }
+opentracing-rs-jaeger = { path = "jaeger", version = "0.1.0" }
 
 [dev-dependencies]
 futures = "0.1.25"
 tokio = "0.1.13"
 
 [patch.crates-io]
-opentracing = { path = "opentracing" }
-opentracing-jaeger = { path = "opentracing-jaeger" }
+opentracing-rs-core = { path = "core" }
+opentracing-rs-jaeger = { path = "jaeger" }
