@@ -23,7 +23,3 @@ opentracing-rs-jaeger = { path = "jaeger", version = "0.1.0" }
 [dev-dependencies]
 futures = "0.1.25"
 tokio = "0.1.13"
-
-[patch.crates-io]
-opentracing-rs-core = { path = "core" }
-opentracing-rs-jaeger = { path = "jaeger" }
