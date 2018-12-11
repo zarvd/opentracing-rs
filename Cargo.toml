@@ -13,8 +13,8 @@ members = [
 ]
 
 [dependencies]
-opentracing = { path = "opentracing" }
-opentracing-jaeger = { path = "opentracing-jaeger" }
+opentracing = { path = "opentracing", version = "0.1.0" }
+opentracing-jaeger = { path = "opentracing-jaeger", version = "0.1.0" }
 
 [dev-dependencies]
 futures = "0.1.25"
