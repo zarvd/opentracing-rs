@@ -1,4 +1,4 @@
-use opentracing::Tag;
+use opentracing_rs_core::Tag;
 
 use crate::TraceId;
 

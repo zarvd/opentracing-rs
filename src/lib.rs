@@ -1,2 +1,2 @@
-pub use opentracing::{Span, SpanBuilder, SpanContext, Tag, Tracer};
-pub use opentracing_jaeger as jaeger;
+pub use opentracing_rs_core::{Span, SpanBuilder, SpanContext, Tag, Tracer};
+pub use opentracing_rs_jaeger as jaeger;

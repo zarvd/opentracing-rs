@@ -2,10 +2,10 @@ use std::time::SystemTime;
 
 use futures::sync::mpsc;
 
-use opentracing::{BaggageItem, Tag};
+use opentracing_rs_core::{BaggageItem, Tag};
 
-pub type Span = opentracing::Span<SpanState>;
-pub type SpanReference = opentracing::SpanReference<SpanState>;
+pub type Span = opentracing_rs_core::Span<SpanState>;
+pub type SpanReference = opentracing_rs_core::SpanReference<SpanState>;
 
 #[derive(Debug, Clone)]
 pub struct TraceId {
@@ -79,7 +79,7 @@ impl SpanBuilder {
     }
 }
 
-impl opentracing::SpanBuilder<SpanState> for SpanBuilder {
+impl opentracing_rs_core::SpanBuilder<SpanState> for SpanBuilder {
     fn start_time(mut self, time: SystemTime) -> Self {
         self.start_time = Some(time);
         self
@@ -93,9 +93,10 @@ impl opentracing::SpanBuilder<SpanState> for SpanBuilder {
     fn child_of(mut self, span: &Span) -> Self {
         self.baggage_items
             .extend(span.context().baggage_items().clone());
-        self.references.push(opentracing::SpanReference::ChildOf(
-            span.context().state().clone(),
-        ));
+        self.references
+            .push(opentracing_rs_core::SpanReference::ChildOf(
+                span.context().state().clone(),
+            ));
         self
     }
 
@@ -104,7 +105,7 @@ impl opentracing::SpanBuilder<SpanState> for SpanBuilder {
 
         for reference in &self.references {
             match reference {
-                opentracing::SpanReference::ChildOf(parent) => {
+                opentracing_rs_core::SpanReference::ChildOf(parent) => {
                     state = Some(SpanState::from_parent(parent.clone()))
                 }
                 _ => {}

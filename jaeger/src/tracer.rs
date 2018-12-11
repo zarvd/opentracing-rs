@@ -50,7 +50,7 @@ where
     }
 }
 
-impl<S, R> opentracing::Tracer<SpanState, SpanBuilder> for Tracer<S, R>
+impl<S, R> opentracing_rs_core::Tracer<SpanState, SpanBuilder> for Tracer<S, R>
 where
     S: Sampler,
     R: Reporter,
