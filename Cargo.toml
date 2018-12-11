@@ -1,7 +1,7 @@
 [package]
 name = "opentracing-rs"
 description = "opentracing for rust"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 authors = ["ccc13 <currantxx@gmail.com>"]
 repository = "https://github.com/ccc13/opentracing-rs"
