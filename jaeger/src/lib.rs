@@ -1,6 +1,7 @@
 mod reporter;
 mod sampler;
 mod span;
+mod thrift;
 mod tracer;
 
 pub use crate::reporter::{LoggingReporter, NullReporter, RemoteReporter, Reporter};

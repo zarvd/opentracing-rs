@@ -5,6 +5,7 @@ pub trait Reporter {
     fn close(&mut self);
 }
 
+#[derive(Default)]
 pub struct NullReporter {}
 
 impl NullReporter {}
@@ -32,6 +33,7 @@ impl Reporter for LoggingReporter {
     fn close(&mut self) {}
 }
 
+#[derive(Default)]
 pub struct RemoteReporter {}
 
 impl RemoteReporter {}
