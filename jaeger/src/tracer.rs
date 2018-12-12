@@ -50,12 +50,15 @@ where
     }
 }
 
-impl<S, R> opentracing_rs_core::Tracer<SpanState, SpanBuilder> for Tracer<S, R>
+impl<S, R> opentracing_rs_core::Tracer for Tracer<S, R>
 where
     S: Sampler,
     R: Reporter,
 {
-    fn span<N>(&mut self, operation_name: N) -> SpanBuilder
+    type SpanState = SpanState;
+    type SpanBuilder = SpanBuilder;
+
+    fn span<N>(&mut self, operation_name: N) -> Self::SpanBuilder
     where
         N: Into<String>,
     {
