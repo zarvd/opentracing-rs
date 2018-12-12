@@ -7,6 +7,7 @@ authors = ["ccc13 <currantxx@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+tokio = "0.1.13"
 futures = "0.1.25"
 rand = "0.6"
 ordered-float = "1.0.1"

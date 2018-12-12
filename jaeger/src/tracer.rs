@@ -43,7 +43,7 @@ where
             .take()
             .unwrap()
             .for_each(move |span| {
-                reporter.report(&span);
+                reporter.report(span);
                 Ok(())
             })
             .map_err(|_| ())

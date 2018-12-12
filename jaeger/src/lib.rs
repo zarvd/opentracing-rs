@@ -3,8 +3,12 @@ mod sampler;
 mod span;
 mod thrift;
 mod tracer;
+mod transport;
 
-pub use crate::reporter::{LoggingReporter, NullReporter, RemoteReporter, Reporter};
-pub use crate::sampler::{ConstSampler, ProbabilisticSampler, Sampler};
-pub use crate::span::{Span, SpanBuilder, SpanState, TraceId};
-pub use crate::tracer::Tracer;
+pub use crate::{
+    reporter::{LoggingReporter, NullReporter, RemoteReporter, Reporter},
+    sampler::{ConstSampler, ProbabilisticSampler, Sampler},
+    span::{Span, SpanBuilder, SpanState, TraceId},
+    tracer::Tracer,
+    transport::Transport,
+};
