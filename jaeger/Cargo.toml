@@ -13,5 +13,6 @@ rand = "0.6"
 ordered-float = "1.0.1"
 thrift = "0.0.4"
 try_from = "0.3.2"
+bytes = "0.4.11"
 
 opentracing-rs-core = { path = "../core", version = "0.1.0" }

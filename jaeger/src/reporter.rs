@@ -1,3 +1,8 @@
+use std::time::Duration;
+
+use futures::{Future, Stream};
+use tokio::timer::Interval;
+
 use crate::{Span, Transport};
 
 pub trait Reporter {
@@ -40,10 +45,20 @@ pub struct RemoteReporter<T> {
 
 impl<T> RemoteReporter<T>
 where
-    T: Transport,
+    T: Transport + Clone,
 {
     pub fn new(sender: T) -> Self {
         Self { sender }
+    }
+
+    pub fn interval_flush(&self, duration: Duration) -> impl Future<Item = (), Error = ()> {
+        let mut sender = self.sender.clone();
+        Interval::new_interval(duration)
+            .for_each(move |_| {
+                sender.flush();
+                Ok(())
+            })
+            .map_err(|_| ())
     }
 }
 

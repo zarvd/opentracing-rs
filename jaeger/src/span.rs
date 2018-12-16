@@ -24,8 +24,9 @@ impl TraceId {
 
 #[derive(Debug, Clone)]
 pub struct SpanState {
-    trace_id: TraceId,
-    span_id: u64,
+    pub(crate) trace_id: TraceId,
+    pub(crate) span_id: u64,
+    pub(crate) parent_span_id: Option<u64>,
 }
 
 impl SpanState {
@@ -33,6 +34,7 @@ impl SpanState {
         Self {
             trace_id: TraceId::new(),
             span_id: rand::random(),
+            parent_span_id: None,
         }
     }
 
@@ -40,6 +42,7 @@ impl SpanState {
         Self {
             trace_id: parent.trace_id,
             span_id: rand::random(),
+            parent_span_id: Some(parent.span_id),
         }
     }
 }
@@ -60,9 +63,9 @@ pub struct SpanBuilder {
 }
 
 impl SpanBuilder {
-    pub fn new<O>(operation_name: O, sender: mpsc::UnboundedSender<Span>) -> Self
+    pub fn new<N>(operation_name: N, sender: mpsc::UnboundedSender<Span>) -> Self
     where
-        O: Into<String>,
+        N: Into<String>,
     {
         let operation_name = operation_name.into();
         let baggage_items = Vec::new();

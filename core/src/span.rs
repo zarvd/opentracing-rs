@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use futures::sync::mpsc;
 use futures::{Future, Sink};
@@ -53,6 +53,23 @@ where
 
     pub fn context(&self) -> &SpanContext<S> {
         &self.inner.as_ref().unwrap().context
+    }
+
+    pub fn start_time(&self) -> SystemTime {
+        self.inner.as_ref().unwrap().start_time
+    }
+
+    pub fn duration(&self) -> Duration {
+        let inner = self.inner.as_ref().unwrap();
+        inner
+            .finish_time
+            .unwrap()
+            .duration_since(inner.start_time)
+            .unwrap()
+    }
+
+    pub fn tags(&self) -> &[Tag] {
+        &self.inner.as_ref().unwrap().tags
     }
 
     pub fn set_operation_name<O>(&mut self, op_name: O)

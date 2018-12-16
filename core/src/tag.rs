@@ -15,6 +15,18 @@ impl Tag {
             value: value.into(),
         }
     }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn value(&self) -> &TagValue {
+        &self.value
+    }
+
+    pub fn split(self) -> (String, TagValue) {
+        (self.name, self.value)
+    }
 }
 
 #[derive(Clone, Debug)]
