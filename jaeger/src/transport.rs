@@ -15,7 +15,7 @@ use tokio::prelude::*;
 use crate::{thrift_gen::agent, Process, Span};
 use opentracing_rs_core::Tag;
 
-pub trait Transport {
+pub trait Transport: Send {
     fn append(&mut self, span: Span);
     fn flush(&mut self);
 }
@@ -125,6 +125,10 @@ impl UdpTransport {
 
 impl Transport for UdpTransport {
     fn append(&mut self, span: Span) {
+        if !span.context().state().is_sampled {
+            return;
+        }
+
         {
             let mut buf = self.span_buffer.write().unwrap();
             buf.push(span);

@@ -1,8 +1,11 @@
+use std::sync::Arc;
 use std::time::SystemTime;
 
 use futures::sync::mpsc;
 
 use opentracing_rs_core::{BaggageItem, Tag};
+
+use crate::Sampler;
 
 pub type Span = opentracing_rs_core::Span<SpanState>;
 pub type SpanReference = opentracing_rs_core::SpanReference<SpanState>;
@@ -27,13 +30,15 @@ pub struct SpanState {
     pub(crate) trace_id: TraceId,
     pub(crate) span_id: u64,
     pub(crate) parent_span_id: Option<u64>,
+    pub(crate) is_sampled: bool,
 }
 
 impl SpanState {
-    pub fn new() -> Self {
+    pub fn new(trace_id: TraceId, span_id: u64, is_sampled: bool) -> Self {
         Self {
-            trace_id: TraceId::new(),
-            span_id: rand::random(),
+            trace_id,
+            span_id,
+            is_sampled,
             parent_span_id: None,
         }
     }
@@ -43,13 +48,14 @@ impl SpanState {
             trace_id: parent.trace_id,
             span_id: rand::random(),
             parent_span_id: Some(parent.span_id),
+            is_sampled: parent.is_sampled,
         }
     }
 }
 
 impl Default for SpanState {
     fn default() -> Self {
-        Self::new()
+        Self::new(TraceId::new(), rand::random(), false)
     }
 }
 
@@ -60,10 +66,15 @@ pub struct SpanBuilder {
     tags: Vec<Tag>,
     references: Vec<SpanReference>,
     baggage_items: Vec<BaggageItem>,
+    sampler: Arc<Sampler>,
 }
 
 impl SpanBuilder {
-    pub fn new<N>(operation_name: N, sender: mpsc::UnboundedSender<Span>) -> Self
+    pub fn new<N>(
+        operation_name: N,
+        sampler: Arc<Sampler>,
+        sender: mpsc::UnboundedSender<Span>,
+    ) -> Self
     where
         N: Into<String>,
     {
@@ -77,6 +88,7 @@ impl SpanBuilder {
             baggage_items,
             tags,
             references,
+            sampler,
             start_time: None,
         }
     }
@@ -103,17 +115,33 @@ impl opentracing_rs_core::SpanBuilder<SpanState> for SpanBuilder {
         self
     }
 
-    fn start(self) -> Span {
-        let mut state = None;
+    fn start(mut self) -> Span {
+        let state = {
+            let mut state = None;
 
-        for reference in &self.references {
-            match reference {
-                opentracing_rs_core::SpanReference::ChildOf(parent) => {
-                    state = Some(SpanState::from_parent(parent.clone()))
+            for reference in &self.references {
+                match reference {
+                    opentracing_rs_core::SpanReference::ChildOf(parent) => {
+                        state = Some(SpanState::from_parent(parent.clone()))
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
-        }
+            match state {
+                Some(state) => state,
+                None => {
+                    let trace_id = TraceId::new();
+                    let span_id = rand::random();
+                    let (is_sampled, tags) =
+                        self.sampler.is_sampled(&trace_id, &self.operation_name);
+
+                    self.tags.extend_from_slice(tags);
+
+                    let state = SpanState::new(trace_id, span_id, is_sampled);
+                    state
+                }
+            }
+        };
 
         Span::new(
             self.sender,
@@ -121,7 +149,7 @@ impl opentracing_rs_core::SpanBuilder<SpanState> for SpanBuilder {
             self.start_time.unwrap_or_else(SystemTime::now),
             self.tags,
             self.references,
-            state.unwrap_or_else(SpanState::default),
+            state,
             self.baggage_items,
         )
     }

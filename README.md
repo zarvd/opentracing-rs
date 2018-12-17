@@ -23,24 +23,22 @@ Example
 
 ```rust
 fn main() {
-    let sampler = ConstSampler::new(true);
-    let (transport, transport_serve) = UdpTransport::builder()
-        .process_service_name("jaeger_example")
-        .transport_protocol(TransportProtocol::ThriftCompact)
-        .build_and_serve("127.0.0.1:6831".parse().unwrap());
-
-    let reporter = RemoteReporter::new(transport);
-
-    let interval_flush = reporter.interval_flush(Duration::from_millis(500));
-
-    let mut tracer = JaegerTracer::new(sampler, reporter);
-
     tokio::run(lazy(move || {
-        tokio::spawn(interval_flush);
-        tokio::spawn(transport_serve);
-        tokio::spawn(tracer.serve());
-        {
-            let span = tracer.span("hello").start();
+        // build and serve tracer
+        let mut tracer = JaegerTracer::builder()
+            .probabilistic_sampler(0.50)
+            .udp_remote_reporter(
+                "jaeger_example",
+                "127.0.0.1:6831".parse().unwrap(),
+                TransportProtocol::ThriftCompact,
+                Duration::from_millis(500),
+            )
+            .build_and_serve();
+            
+        // clone tracer into event callback
+        // start tracing
+        tokio::spawn(lazy(move || {
+            let span = tracer.span("hello 1").start();
 
             std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -57,11 +55,14 @@ fn main() {
             }
 
             std::thread::sleep(std::time::Duration::from_secs(2));
-        }
+
+            Ok(())
+        }));
 
         Ok(())
     }));
 }
+
 ```
 
 License

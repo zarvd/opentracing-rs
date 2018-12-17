@@ -1,12 +1,9 @@
 use opentracing_rs_core::Tag;
 
-use crate::TraceId;
+use crate::{tag, TraceId};
 
-const SAMPLER_TYPE_TAG_KEY: &str = "";
-const SAMPLER_PARAM_TAG_KEY: &str = "";
-
-pub trait Sampler {
-    fn is_sampled(&self, trace_id: TraceId, operation: &str) -> (bool, &[Tag]);
+pub trait Sampler: Send + Sync {
+    fn is_sampled(&self, trace_id: &TraceId, operation: &str) -> (bool, &[Tag]);
 }
 
 pub struct ConstSampler {
@@ -17,7 +14,8 @@ pub struct ConstSampler {
 impl ConstSampler {
     pub fn new(sample: bool) -> Self {
         let mut tags = Vec::with_capacity(2);
-        tags.push(Tag::new(SAMPLER_TYPE_TAG_KEY, "const"));
+        tags.push(Tag::new(tag::SAMPLER_TYPE_TAG_KEY, tag::SAMPLER_TYPE_CONST));
+
         Self {
             decision: sample,
             tags,
@@ -26,7 +24,7 @@ impl ConstSampler {
 }
 
 impl Sampler for ConstSampler {
-    fn is_sampled(&self, _trace_id: TraceId, _operation: &str) -> (bool, &[Tag]) {
+    fn is_sampled(&self, _trace_id: &TraceId, _operation: &str) -> (bool, &[Tag]) {
         (self.decision, &self.tags)
     }
 }
@@ -46,8 +44,10 @@ impl ProbabilisticSampler {
             );
         }
 
-        let mut tags = Vec::with_capacity(2);
-        tags.push(Tag::new(SAMPLER_TYPE_TAG_KEY, "probabilistic"));
+        let tags = vec![
+            Tag::new(tag::SAMPLER_TYPE_TAG_KEY, tag::SAMPLER_TYPE_PROBABILISTIC),
+            Tag::new(tag::SAMPLER_PARAM_TAG_KEY, sampling_rate),
+        ];
 
         let sampling_boundary = (std::u64::MAX as f64 * sampling_rate) as u64;
         Self {
@@ -56,10 +56,14 @@ impl ProbabilisticSampler {
             tags,
         }
     }
+
+    pub fn sampling_rate(&self) -> f64 {
+        self.sampling_rate
+    }
 }
 
 impl Sampler for ProbabilisticSampler {
-    fn is_sampled(&self, trace_id: TraceId, _operation: &str) -> (bool, &[Tag]) {
+    fn is_sampled(&self, trace_id: &TraceId, _operation: &str) -> (bool, &[Tag]) {
         (self.sampling_boundary > trace_id.low, &self.tags)
     }
 }

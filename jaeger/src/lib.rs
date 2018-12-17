@@ -14,6 +14,6 @@ pub use crate::{
     reporter::{LoggingReporter, NullReporter, RemoteReporter, Reporter},
     sampler::{ConstSampler, ProbabilisticSampler, Sampler},
     span::{Span, SpanBuilder, SpanState, TraceId},
-    tracer::{Process, Tracer},
+    tracer::{Process, Tracer, TracerBuilder},
     transport::{SpanBatch, Transport, TransportProtocol, UdpTransport},
 };

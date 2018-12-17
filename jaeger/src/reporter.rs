@@ -5,7 +5,7 @@ use tokio::timer::Interval;
 
 use crate::{Span, Transport};
 
-pub trait Reporter {
+pub trait Reporter: Send {
     fn report(&mut self, span: Span);
     fn close(&mut self);
 }
